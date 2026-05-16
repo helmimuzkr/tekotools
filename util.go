@@ -1,17 +1,21 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 const (
-	SYSTEM = "SYSTEM"
+	SYSTEM      = "SYSTEM"
+	FORMAT_TIME = "2006-01-02 15:04:05"
 )
 
 func PrintStringErr(name string, pid int, err string) string {
-	return fmt.Sprintf("[%s | %d] : error: %s\n", name, pid, err)
+	return fmt.Sprintf("%s - [%s | %d] : error: %s\n", time.Now().Format(FORMAT_TIME), name, pid, err)
 }
 
 func PrintErr(name string, pid int, err string) string {
-	return fmt.Sprintf("[%s | %d] : error: %s\n", name, pid, err)
+	return fmt.Sprintf("%s - [%s | %d] : error: %s\n", time.Now().Format(FORMAT_TIME), name, pid, err)
 }
 
 func PrintLog(name string, pid int, messages ...string) {
@@ -23,5 +27,5 @@ func PrintLog(name string, pid int, messages ...string) {
 		}
 	}
 
-	fmt.Printf("[%s | %d] :  %s\n", name, pid, msg)
+	fmt.Printf("%s - [%s | %d] :  %s\n", time.Now().Format(FORMAT_TIME), name, pid, msg)
 }

@@ -29,9 +29,12 @@ type Service struct {
 
 	mu sync.RWMutex
 
-	LogCh   chan string
+	processDoneCh chan struct{}
+
 	logFile *os.File
-	doneCh  chan struct{}
+
+	eventMu    sync.RWMutex
+	eventLogCh chan string
 }
 
 func InitService(name string, path string, args []string) *Service {
@@ -39,21 +42,20 @@ func InitService(name string, path string, args []string) *Service {
 		Name:   name,
 		Path:   path + "/" + name,
 		Status: INACTIVE,
-		LogCh:  make(chan string, 100),
 		Args:   args,
 	}
 }
 
 // So StartProcess() is still running in its goroutine the whole time — it's blocked at s.cmd.Wait().
 // When SIGTERM causes the JAR to exit, cmd.Wait() unblocks naturally and StartProcess() finishes its own cleanup.
-// StopProcess() just sends the signal and waits at <-s.doneCh for StartProcess() to confirm everything is cleaned up before returning.
+// StopProcess() just sends the signal and waits at <-s.processDoneCh for StartProcess() to confirm everything is cleaned up before returning.
 // They work together — StopProcess() triggers the exit, StartProcess() handles the cleanup.
 
 // StartProcess  →  start, stream logs, wait, cleanup
 // StopProcess   →  send signal, wait for StartProcess to confirm done
 
 func (s *Service) StartProcess(command string, args ...string) {
-	s.doneCh = make(chan struct{})
+	s.processDoneCh = make(chan struct{})
 
 	os.MkdirAll("logs", 0o755)
 	f, err := os.OpenFile("logs/"+s.Name+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
@@ -65,7 +67,7 @@ func (s *Service) StartProcess(command string, args ...string) {
 	s.logFile = f
 
 	s.cmd = exec.Command(command, args...)
-	PrintLog(s.Name, s.Pid, fmt.Sprintf("executing command: %s", s.cmd.Args))
+	PrintLog(SYSTEM, 0, fmt.Sprintf("executing command for %s: %v", s.Name, s.cmd.Args))
 
 	stdout, err := s.cmd.StdoutPipe()
 	if err != nil {
@@ -84,10 +86,9 @@ func (s *Service) StartProcess(command string, args ...string) {
 		return
 	}
 
+	PrintLog(SYSTEM, 0, fmt.Sprintf("%s started", s.Name))
 	s.SetStatus(ACTIVE)
 	s.Pid = s.cmd.Process.Pid
-
-	PrintLog(s.Name, s.Pid, "started")
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -98,8 +99,8 @@ func (s *Service) StartProcess(command string, args ...string) {
 	wg.Wait()
 
 	// StartProcess owns all cleanup
-	s.cleanUpService()
-	PrintLog(s.Name, s.Pid, "exited")
+	s.processDone()
+	PrintLog(SYSTEM, 0, fmt.Sprintf("%s exited", s.Name))
 }
 
 func (s *Service) StopProcess() {
@@ -111,28 +112,36 @@ func (s *Service) StopProcess() {
 	s.cmd.Process.Signal(syscall.SIGTERM)
 
 	select {
-	case <-s.doneCh:
+	case <-s.processDoneCh:
 		PrintLog(s.Name, s.Pid, "stopped cleanly")
 	case <-time.After(10 * time.Second):
 		PrintLog(s.Name, s.Pid, "sdidn't stop in time, force killing")
 		s.cmd.Process.Kill()
-		<-s.doneCh // still wait for cleanup to finish
+		<-s.processDoneCh // still wait for cleanup to finish
 	}
 }
 
 func (s *Service) abortError(err error) {
-	s.LogCh <- PrintStringErr(s.Name, s.Pid, err.Error())
-	s.cleanUpService()
+	PrintErr(s.Name, s.Pid, err.Error())
+	s.processDone()
 }
 
-func (s *Service) cleanUpService() {
-	PrintLog(s.Name, s.Pid, "cleaning up service...")
+func (s *Service) processDone() {
+	PrintLog(SYSTEM, 0, fmt.Sprintf("cleaning up %s ...", s.Name))
 	s.SetStatus(INACTIVE)
+
 	if s.logFile != nil {
 		s.logFile.Close()
 	}
-	close(s.LogCh)
-	close(s.doneCh) // signal to StopProcess that cleanup is done
+
+	s.eventMu.Lock()
+	if s.eventLogCh != nil {
+		close(s.eventLogCh)
+		s.eventLogCh = nil
+	}
+	s.eventMu.Unlock()
+
+	close(s.processDoneCh)
 }
 
 func (s *Service) streamLog(logPipe io.ReadCloser, wg *sync.WaitGroup) {
@@ -140,9 +149,30 @@ func (s *Service) streamLog(logPipe io.ReadCloser, wg *sync.WaitGroup) {
 	scanner := bufio.NewScanner(logPipe)
 	for scanner.Scan() {
 		line := fmt.Sprintf("[%s | %d] : %s", s.Name, s.Pid, scanner.Text())
-		s.LogCh <- line
+
+		// publish log for Subscriber
+		s.eventMu.RLock()
+		if s.eventLogCh != nil {
+			s.eventLogCh <- line // UI subscriber if active
+		}
+		s.eventMu.RUnlock()
+
+		// file log
 		s.logFile.WriteString(line + "\n")
 	}
+}
+
+func (s *Service) Subscribe() chan string {
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
+	s.eventLogCh = make(chan string, 100)
+	return s.eventLogCh
+}
+
+func (s *Service) Unsubscribe() {
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
+	s.eventLogCh = nil // stop routing, don't close
 }
 
 func (s *Service) SetStatus(status Status) {

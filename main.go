@@ -16,5 +16,12 @@ func main() {
 
 	mutill := Mutill{}
 	mutill.RegisterService(config)
+
+	// go func() {
+	// 	for log := range mutill.WatchService("simple-loop.jar") {
+	// 		PrintLog("UI", 0, log)
+	// 	}
+	// }()
+	//
 	mutill.StartAll()
 }
