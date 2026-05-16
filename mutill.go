@@ -14,9 +14,6 @@ type Mutill struct {
 	services map[string]*Service
 
 	mu sync.RWMutex
-
-	logStarted bool
-	ShutdownCh chan os.Signal
 }
 
 func (m *Mutill) RegisterService(config *MutillConfig) {
@@ -75,7 +72,7 @@ func (m *Mutill) StartAll() {
 	m.mu.RLock()
 	services := make([]*Service, 0, len(m.services))
 	for _, v := range m.services {
-		if v.Status == INACTIVE {
+		if v.GetStatus() == INACTIVE {
 			services = append(services, v)
 		}
 	}
@@ -118,8 +115,8 @@ func (m *Mutill) GetTotalStatusServices() (int, int) {
 	active := 0
 	inactive := 0
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	for _, s := range m.services {
 		switch s.GetStatus() {
@@ -150,10 +147,12 @@ func (m *Mutill) ListenShutdown() {
 func (m *Mutill) AutomaticShutDownTicker(interval time.Duration, sigChan chan os.Signal) {
 	ticker := time.NewTicker(interval)
 	go func() {
+		defer ticker.Stop()
 		for range ticker.C {
 			_, totalInactive := m.GetTotalStatusServices()
 			if len(m.services) == totalInactive {
 				sigChan <- syscall.SIGQUIT
+				return // exit goroutine after triggering
 			}
 		}
 	}()
