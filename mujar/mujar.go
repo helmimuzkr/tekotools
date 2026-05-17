@@ -1,56 +1,60 @@
-package main
+package mujar
 
 import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 )
 
-type Mutill struct {
-	config   *MutillConfig
+type Mujar struct {
+	config   *Setting
 	services map[string]*Service
 
 	mu sync.RWMutex
 }
 
-func (m *Mutill) RegisterService(config *MutillConfig) {
+func New(config *Setting) *Mujar {
+	m := &Mujar{
+		services: make(map[string]*Service),
+		config:   config,
+	}
+	m.registerServices()
+	return m
+}
+
+func (m *Mujar) registerServices() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-
-	if config == nil {
-		return
-	}
-
-	m.config = config
 
 	if m.config.Services == nil {
 		panic("no service inputed")
 	}
 
-	PrintLog(SYSTEM, 0, fmt.Sprintf("config -> %v", config))
+	PrintLog(SYSTEM, 0, fmt.Sprintf("config -> %v", m.config))
 
 	if m.services == nil {
 		m.services = make(map[string]*Service)
 	}
 
 	for _, s := range m.config.Services {
-		if s.Skip {
+		if s.SkipFlag {
 			continue
 		}
-		m.services[s.Name] = InitService(s.Name, s.Path, s.Args)
+		m.services[s.Name] = InitService(s.Name, s.Path)
 	}
 }
 
-func (m *Mutill) GetService(name string) *Service {
+func (m *Mujar) GetService(name string) *Service {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.services[name]
 }
 
-func (m *Mutill) WatchService(name string) chan string {
+func (m *Mujar) WatchService(name string) chan string {
 	s := m.GetService(name)
 	if s == nil {
 		return nil
@@ -58,7 +62,7 @@ func (m *Mutill) WatchService(name string) chan string {
 	return s.Subscribe()
 }
 
-func (m *Mutill) UnwatchService(name string) {
+func (m *Mujar) UnwatchService(name string) {
 	s := m.GetService(name)
 	if s == nil {
 		return
@@ -66,7 +70,7 @@ func (m *Mutill) UnwatchService(name string) {
 	s.Unsubscribe()
 }
 
-func (m *Mutill) StartAll() {
+func (m *Mujar) StartAll() {
 	PrintLog(SYSTEM, 0, "starting application...")
 
 	m.mu.RLock()
@@ -83,10 +87,15 @@ func (m *Mutill) StartAll() {
 		if m.config.Command != "" {
 			cmd = m.config.Command
 		}
+		if s.Path != "" && strings.Contains(cmd, "$PATH") {
+			cmd = strings.ReplaceAll(cmd, "$PATH", s.Path)
+		}
 
-		args := []string{"/c", s.Path}
-		if s.Args != nil {
-			args = s.Args
+		// split and remove first args, because the first args is command
+		args := strings.Split(cmd, " ")
+		if len(args) > 1 {
+			cmd = args[0]
+			args = args[1:]
 		}
 
 		go s.StartProcess(cmd, args...)
@@ -95,7 +104,7 @@ func (m *Mutill) StartAll() {
 	m.ListenShutdown()
 }
 
-func (m *Mutill) StopAll() {
+func (m *Mujar) StopAll() {
 	m.mu.RLock()
 	services := make([]*Service, 0, len(m.services))
 	for _, v := range m.services {
@@ -111,7 +120,7 @@ func (m *Mutill) StopAll() {
 	PrintLog(SYSTEM, 0, "application stopped", fmt.Sprintf("actives: %d", actives), fmt.Sprintf("inactives: %d", inactives))
 }
 
-func (m *Mutill) GetTotalStatusServices() (int, int) {
+func (m *Mujar) GetTotalStatusServices() (int, int) {
 	active := 0
 	inactive := 0
 
@@ -131,7 +140,7 @@ func (m *Mutill) GetTotalStatusServices() (int, int) {
 }
 
 // ListenShutdown will block goroutines
-func (m *Mutill) ListenShutdown() {
+func (m *Mujar) ListenShutdown() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
 
@@ -144,7 +153,7 @@ func (m *Mutill) ListenShutdown() {
 	m.StopAll()
 }
 
-func (m *Mutill) AutomaticShutDownTicker(interval time.Duration, sigChan chan os.Signal) {
+func (m *Mujar) AutomaticShutDownTicker(interval time.Duration, sigChan chan os.Signal) {
 	ticker := time.NewTicker(interval)
 	go func() {
 		defer ticker.Stop()

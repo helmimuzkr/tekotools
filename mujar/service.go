@@ -1,4 +1,4 @@
-package main
+package mujar
 
 import (
 	"bufio"
@@ -24,8 +24,7 @@ type Service struct {
 	Status Status
 	Pid    int
 
-	cmd  *exec.Cmd
-	Args []string
+	cmd *exec.Cmd
 
 	mu sync.RWMutex
 
@@ -37,12 +36,11 @@ type Service struct {
 	eventLogCh chan string
 }
 
-func InitService(name string, path string, args []string) *Service {
+func InitService(name string, path string) *Service {
 	return &Service{
 		Name:   name,
 		Path:   path + "/" + name,
 		Status: INACTIVE,
-		Args:   args,
 	}
 }
 
@@ -67,7 +65,7 @@ func (s *Service) StartProcess(command string, args ...string) {
 	s.logFile = f
 
 	s.cmd = exec.Command(command, args...)
-	PrintLog(SYSTEM, 0, fmt.Sprintf("executing command for %s: %v", s.Name, s.cmd.Args))
+	PrintLog(SYSTEM, 0, fmt.Sprintf("executing command for %s: %s %v", s.Name, command, args))
 
 	stdout, err := s.cmd.StdoutPipe()
 	if err != nil {
