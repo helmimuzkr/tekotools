@@ -1,4 +1,4 @@
-package mujar
+package tekojar
 
 import (
 	"encoding/json"

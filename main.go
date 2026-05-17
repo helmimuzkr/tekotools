@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"mutill/mujar"
+	"tekotools/tekojar"
 )
 
 func main() {
@@ -11,18 +11,18 @@ func main() {
 	settingPath := flag.String("settings", "./mujar/settings.json", "path to settings file")
 	flag.Parse()
 
-	config, err := mujar.LoadSetting(*settingPath)
+	config, err := tekojar.LoadSetting(*settingPath)
 	if err != nil {
 		panic(err)
 	}
 
-	m := mujar.New(config)
+	t := tekojar.New(config)
 
 	go func() {
-		for log := range m.WatchService("simple-loop.jar") {
-			mujar.PrintLog("UI", 0, log)
+		for log := range t.WatchService("simple-loop.jar") {
+			tekojar.PrintLog("UI", 0, log)
 		}
 	}()
 
-	m.StartAll()
+	t.StartAll()
 }

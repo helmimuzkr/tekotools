@@ -1,4 +1,4 @@
-module mutill
+module tekotools
 
 go 1.26.2
 

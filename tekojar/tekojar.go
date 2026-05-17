@@ -1,4 +1,4 @@
-package mujar
+package tekojar
 
 import (
 	"fmt"
@@ -10,15 +10,15 @@ import (
 	"time"
 )
 
-type Mujar struct {
+type Tekojar struct {
 	config   *Setting
 	services map[string]*Service
 
 	mu sync.RWMutex
 }
 
-func New(config *Setting) *Mujar {
-	m := &Mujar{
+func New(config *Setting) *Tekojar {
+	m := &Tekojar{
 		services: make(map[string]*Service),
 		config:   config,
 	}
@@ -26,7 +26,7 @@ func New(config *Setting) *Mujar {
 	return m
 }
 
-func (m *Mujar) registerServices() {
+func (m *Tekojar) registerServices() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -48,13 +48,13 @@ func (m *Mujar) registerServices() {
 	}
 }
 
-func (m *Mujar) GetService(name string) *Service {
+func (m *Tekojar) GetService(name string) *Service {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.services[name]
 }
 
-func (m *Mujar) WatchService(name string) chan string {
+func (m *Tekojar) WatchService(name string) chan string {
 	s := m.GetService(name)
 	if s == nil {
 		return nil
@@ -62,7 +62,7 @@ func (m *Mujar) WatchService(name string) chan string {
 	return s.Subscribe()
 }
 
-func (m *Mujar) UnwatchService(name string) {
+func (m *Tekojar) UnwatchService(name string) {
 	s := m.GetService(name)
 	if s == nil {
 		return
@@ -70,7 +70,7 @@ func (m *Mujar) UnwatchService(name string) {
 	s.Unsubscribe()
 }
 
-func (m *Mujar) StartAll() {
+func (m *Tekojar) StartAll() {
 	PrintLog(SYSTEM, 0, "starting application...")
 
 	m.mu.RLock()
@@ -104,7 +104,7 @@ func (m *Mujar) StartAll() {
 	m.ListenShutdown()
 }
 
-func (m *Mujar) StopAll() {
+func (m *Tekojar) StopAll() {
 	m.mu.RLock()
 	services := make([]*Service, 0, len(m.services))
 	for _, v := range m.services {
@@ -120,7 +120,7 @@ func (m *Mujar) StopAll() {
 	PrintLog(SYSTEM, 0, "application stopped", fmt.Sprintf("actives: %d", actives), fmt.Sprintf("inactives: %d", inactives))
 }
 
-func (m *Mujar) GetTotalStatusServices() (int, int) {
+func (m *Tekojar) GetTotalStatusServices() (int, int) {
 	active := 0
 	inactive := 0
 
@@ -140,7 +140,7 @@ func (m *Mujar) GetTotalStatusServices() (int, int) {
 }
 
 // ListenShutdown will block goroutines
-func (m *Mujar) ListenShutdown() {
+func (m *Tekojar) ListenShutdown() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
 
@@ -153,7 +153,7 @@ func (m *Mujar) ListenShutdown() {
 	m.StopAll()
 }
 
-func (m *Mujar) AutomaticShutDownTicker(interval time.Duration, sigChan chan os.Signal) {
+func (m *Tekojar) AutomaticShutDownTicker(interval time.Duration, sigChan chan os.Signal) {
 	ticker := time.NewTicker(interval)
 	go func() {
 		defer ticker.Stop()
