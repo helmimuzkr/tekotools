@@ -1,3 +1,54 @@
+# Wails build output
+build/bin
+
+# Frontend
+frontend/dist
+frontend/node_modules
+
+# Svelte / Vite
+frontend/dist
+frontend/node_modules
+frontend/.svelte-kit
+frontend/build
+
+# Vite temp files
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of go coverage tool
+*.out
+
+# Logs
 logs
+
+# Go workspace
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config files with sensitive data
+config*.json
+!config.example.json
 config.yaml
-*-dev.json
+settings-*.json
+.env
+.env.*
+!.env.example
