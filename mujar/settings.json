@@ -1,0 +1,16 @@
+{
+  "command": "java -jar $PATH",
+  "auto_shutdown": true,
+  "services": [
+    {
+      "name": "simple-loop.jar",
+      "path": "/home/user/java",
+      "skip_flag": false
+    },
+    {
+      "name": "simple-throw.jar",
+      "path": "/home/user/java",
+      "skip_flag": false
+    }
+  ]
+}
