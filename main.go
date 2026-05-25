@@ -1,28 +1,32 @@
 package main
 
 import (
-	"flag"
+	"embed"
 
-	"tekotools/tekojar"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
+//go:embed all:frontend/dist
+var assets embed.FS
+
 func main() {
-	// go run . --settings /path/to/setting.json
-	settingPath := flag.String("settings", "./mujar/settings.json", "path to settings file")
-	flag.Parse()
+	app := NewApp()
 
-	config, err := tekojar.LoadSetting(*settingPath)
+	err := wails.Run(&options.App{
+		Title:  "Tekotools",
+		Width:  1024,
+		Height: 768,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		OnStartup: app.startup,
+		Bind: []interface{}{
+			app,
+		},
+	})
 	if err != nil {
-		panic(err)
+		println("Error:", err.Error())
 	}
-
-	t := tekojar.New(config)
-
-	go func() {
-		for log := range t.WatchService("simple-loop.jar") {
-			tekojar.PrintLog("UI", 0, log)
-		}
-	}()
-
-	t.StartAll()
 }
