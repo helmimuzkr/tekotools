@@ -16,18 +16,21 @@
       id: "tekojar",
       title: "Tekojar",
       icon: Monitor,
+      section: "content",
       component: Tekojar,
     },
     {
       id: "jsonata",
       title: "JSONata",
       icon: Braces,
+      section: "content",
       component: JsonataQuery,
     },
     {
       id: "settings",
       title: "Settings",
       icon: SettingsIcon,
+      section: "footer",
       component: NotFoundPage,
     },
   ];
@@ -46,7 +49,7 @@
   <Sidebar.Provider open={false}>
     <AppSidebar {pages} {currentPage} onPageChange={handlePage} />
     <Sidebar.Inset>
-      <div class="flex-1">
+      <div class="">
         {#if currentPage.component}
           <currentPage.component />
         {/if}

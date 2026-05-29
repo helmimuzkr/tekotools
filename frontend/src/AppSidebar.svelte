@@ -22,24 +22,44 @@
     <!-- <Button variant="ghost" onclick={() => sidebar.toggle()}>☰</Button> -->
     <Sidebar.Trigger />
   </Sidebar.Header>
+
   <Sidebar.Content>
     <Sidebar.Group>
       <Sidebar.GroupContent>
         <Sidebar.Menu>
           {#each pages as page (page.id)}
-            <Sidebar.MenuItem>
-              <Sidebar.MenuButton isActive={currentPage.id === page.id}>
-                {#snippet child({ props })}
-                  <button onclick={() => onPageChange(page)} {...props}>
-                    <page.icon />
-                    <span>{page.title}</span>
-                  </button>
-                {/snippet}
-              </Sidebar.MenuButton>
-            </Sidebar.MenuItem>
+            {#if page.section === "content"}
+              <Sidebar.MenuItem>
+                <Sidebar.MenuButton isActive={currentPage.id === page.id}>
+                  {#snippet child({ props })}
+                    <button onclick={() => onPageChange(page)} {...props}>
+                      <page.icon />
+                      <span>{page.title}</span>
+                    </button>
+                  {/snippet}
+                </Sidebar.MenuButton>
+              </Sidebar.MenuItem>
+            {/if}
           {/each}
         </Sidebar.Menu>
       </Sidebar.GroupContent>
     </Sidebar.Group>
   </Sidebar.Content>
+
+  <Sidebar.Footer>
+    {#each pages as page (page.id)}
+      {#if page.section === "footer"}
+        <Sidebar.MenuItem>
+          <Sidebar.MenuButton isActive={currentPage.id === page.id}>
+            {#snippet child({ props })}
+              <button onclick={() => onPageChange(page)} {...props}>
+                <page.icon />
+                <span>{page.title}</span>
+              </button>
+            {/snippet}
+          </Sidebar.MenuButton>
+        </Sidebar.MenuItem>
+      {/if}
+    {/each}
+  </Sidebar.Footer>
 </Sidebar.Root>
