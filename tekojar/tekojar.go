@@ -4,23 +4,23 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
 )
 
 type Tekojar struct {
-	config   *Setting
+	setting  *Setting
 	services map[string]*Service
 
 	mu sync.RWMutex
 }
 
-func New(config *Setting) *Tekojar {
+func New(setting *Setting) *Tekojar {
 	m := &Tekojar{
 		services: make(map[string]*Service),
-		config:   config,
+		setting:  setting,
 	}
 	m.registerServices()
 	return m
@@ -30,17 +30,17 @@ func (m *Tekojar) registerServices() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.config.Services == nil {
+	if m.setting.Services == nil {
 		panic("no service inputed")
 	}
 
-	PrintLog(SYSTEM, 0, fmt.Sprintf("config -> %v", m.config))
+	PrintLog(SYSTEM, 0, fmt.Sprintf("setting -> %v", m.setting))
 
 	if m.services == nil {
 		m.services = make(map[string]*Service)
 	}
 
-	for _, s := range m.config.Services {
+	for _, s := range m.setting.Services {
 		if s.SkipFlag {
 			continue
 		}
@@ -57,6 +57,7 @@ func (m *Tekojar) GetService(name string) *Service {
 func (m *Tekojar) WatchService(name string) chan string {
 	s := m.GetService(name)
 	if s == nil {
+		PrintErr(SYSTEM, 0, "Service not found")
 		return nil
 	}
 	return s.Subscribe()
@@ -65,9 +66,46 @@ func (m *Tekojar) WatchService(name string) chan string {
 func (m *Tekojar) UnwatchService(name string) {
 	s := m.GetService(name)
 	if s == nil {
+		PrintErr(SYSTEM, 0, "Service not found")
 		return
 	}
 	s.Unsubscribe()
+}
+
+func (t *Tekojar) Start(name string) {
+	s := t.GetService(name)
+	if s == nil {
+		PrintErr(SYSTEM, 0, "Service not found")
+		return
+	}
+
+	go s.StartProcess(t.setting.Command)
+
+	go t.ListenShutdown(name)
+}
+
+func (t *Tekojar) Stop(name string) {
+	s := t.GetService(name)
+	if s == nil {
+		PrintErr(SYSTEM, 0, "Service not found")
+		return
+	}
+	s.StopProcess()
+}
+
+func (m *Tekojar) GetAll() []*Service {
+	m.mu.RLock()
+	services := make([]*Service, 0, len(m.services))
+	for _, v := range m.services {
+		services = append(services, v)
+	}
+	m.mu.RUnlock()
+
+	sort.Slice(services, func(i, j int) bool {
+		return services[i].Name < services[j].Name
+	})
+
+	return services
 }
 
 func (m *Tekojar) StartAll() {
@@ -83,25 +121,10 @@ func (m *Tekojar) StartAll() {
 	m.mu.RUnlock()
 
 	for _, s := range services {
-		cmd := "cmd"
-		if m.config.Command != "" {
-			cmd = m.config.Command
-		}
-		if s.Path != "" && strings.Contains(cmd, "$PATH") {
-			cmd = strings.ReplaceAll(cmd, "$PATH", s.Path)
-		}
-
-		// split and remove first args, because the first args is command
-		args := strings.Split(cmd, " ")
-		if len(args) > 1 {
-			cmd = args[0]
-			args = args[1:]
-		}
-
-		go s.StartProcess(cmd, args...)
+		go s.StartProcess(m.setting.Command)
 	}
 
-	m.ListenShutdown()
+	m.ListenAndShutdownAll()
 }
 
 func (m *Tekojar) StopAll() {
@@ -140,12 +163,12 @@ func (m *Tekojar) GetTotalStatusServices() (int, int) {
 }
 
 // ListenShutdown will block goroutines
-func (m *Tekojar) ListenShutdown() {
+func (m *Tekojar) ListenAndShutdownAll() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
 
-	if m.config.AutoShutdown {
-		m.AutomaticShutDownTicker(5*time.Second, sigChan)
+	if m.setting.AutoShutdown {
+		m.AutomaticShutDownTicker("", 5*time.Second, sigChan)
 	}
 
 	<-sigChan
@@ -153,14 +176,35 @@ func (m *Tekojar) ListenShutdown() {
 	m.StopAll()
 }
 
-func (m *Tekojar) AutomaticShutDownTicker(interval time.Duration, sigChan chan os.Signal) {
+// ListenShutdown will block goroutines
+func (m *Tekojar) ListenShutdown(name string) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
+
+	if m.setting.AutoShutdown {
+		m.AutomaticShutDownTicker(name, 5*time.Second, sigChan)
+	}
+
+	<-sigChan
+
+	m.Stop(name)
+}
+
+func (m *Tekojar) AutomaticShutDownTicker(name string, interval time.Duration, sigChan chan os.Signal) {
 	ticker := time.NewTicker(interval)
+
 	go func() {
-		defer ticker.Stop()
+		defer func() {
+			ticker.Stop()
+			PrintLog(SYSTEM, 0, "Shutdown automaticlly")
+		}()
 		for range ticker.C {
 			_, totalInactive := m.GetTotalStatusServices()
-			if len(m.services) == totalInactive {
-				sigChan <- syscall.SIGQUIT
+			if name != "" && m.GetService(name).Status == INACTIVE {
+				sigChan <- syscall.SIGTERM
+				return // exit goroutine after triggering
+			} else if len(m.services) == totalInactive {
+				sigChan <- syscall.SIGTERM
 				return // exit goroutine after triggering
 			}
 		}

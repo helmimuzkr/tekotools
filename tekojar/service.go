@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -24,7 +25,9 @@ type Service struct {
 	Status Status
 	Pid    int
 
-	cmd *exec.Cmd
+	cmd     *exec.Cmd
+	cmdName string
+	args    []string
 
 	mu sync.RWMutex
 
@@ -52,8 +55,14 @@ func InitService(name string, path string) *Service {
 // StartProcess  →  start, stream logs, wait, cleanup
 // StopProcess   →  send signal, wait for StartProcess to confirm done
 
-func (s *Service) StartProcess(command string, args ...string) {
+func (s *Service) StartProcess(command string) {
+	if s.Status == "ACTIVE" {
+		PrintErr(s.Name, s.Pid, "process already active")
+		return
+	}
+
 	s.processDoneCh = make(chan struct{})
+	s.SetStatus(ACTIVE)
 
 	os.MkdirAll("logs", 0o755)
 	f, err := os.OpenFile("logs/"+s.Name+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
@@ -64,8 +73,10 @@ func (s *Service) StartProcess(command string, args ...string) {
 
 	s.logFile = f
 
-	s.cmd = exec.Command(command, args...)
-	PrintLog(SYSTEM, 0, fmt.Sprintf("executing command for %s: %s %v", s.Name, command, args))
+	s.extractCommand(command)
+	s.cmd = exec.Command(s.cmdName, s.args...)
+
+	PrintLog(SYSTEM, 0, fmt.Sprintf("executing command for %s: %s %v", s.Name, s.cmdName, s.args))
 
 	stdout, err := s.cmd.StdoutPipe()
 	if err != nil {
@@ -85,7 +96,6 @@ func (s *Service) StartProcess(command string, args ...string) {
 	}
 
 	PrintLog(SYSTEM, 0, fmt.Sprintf("%s started", s.Name))
-	s.SetStatus(ACTIVE)
 	s.Pid = s.cmd.Process.Pid
 
 	var wg sync.WaitGroup
@@ -146,7 +156,7 @@ func (s *Service) streamLog(logPipe io.ReadCloser, wg *sync.WaitGroup) {
 	defer wg.Done()
 	scanner := bufio.NewScanner(logPipe)
 	for scanner.Scan() {
-		line := fmt.Sprintf("[%s | %d] : %s", s.Name, s.Pid, scanner.Text())
+		line := scanner.Text()
 
 		// publish log for Subscriber
 		s.eventMu.RLock()
@@ -156,6 +166,7 @@ func (s *Service) streamLog(logPipe io.ReadCloser, wg *sync.WaitGroup) {
 		s.eventMu.RUnlock()
 
 		// file log
+		line = fmt.Sprintf("[%s | %d] : %s", s.Name, s.Pid, scanner.Text())
 		s.logFile.WriteString(line + "\n")
 	}
 }
@@ -183,4 +194,24 @@ func (s *Service) GetStatus() Status {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.Status
+}
+
+func (s *Service) extractCommand(command string) {
+	cmdName := "cmd"
+	if command != "" {
+		cmdName = command
+	}
+	if s.Path != "" && strings.Contains(cmdName, "$PATH") {
+		cmdName = strings.ReplaceAll(cmdName, "$PATH", s.Path)
+	}
+
+	// split and remove first args, because the first args is command
+	args := strings.Split(cmdName, " ")
+	if len(args) > 1 {
+		cmdName = args[0]
+		args = args[1:]
+	}
+
+	s.cmdName = cmdName
+	s.args = args
 }
