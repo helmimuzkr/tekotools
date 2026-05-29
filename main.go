@@ -3,6 +3,8 @@ package main
 import (
 	"embed"
 
+	"tekotools/backend"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -12,7 +14,7 @@ import (
 var assets embed.FS
 
 func main() {
-	app := NewApp()
+	tekojarApp := backend.NewTekojarApp()
 
 	err := wails.Run(&options.App{
 		Title:  "Tekotools",
@@ -21,9 +23,10 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		OnStartup: app.startup,
+		OnStartup:  tekojarApp.Startup,
+		OnShutdown: tekojarApp.Shutdown,
 		Bind: []interface{}{
-			app,
+			tekojarApp,
 		},
 	})
 	if err != nil {
