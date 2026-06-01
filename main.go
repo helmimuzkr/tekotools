@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 
-	"tekotools/backend"
+	"tekotools/backend/app"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,7 +14,7 @@ import (
 var assets embed.FS
 
 func main() {
-	tekojarApp, err := backend.NewTekojarApp()
+	tekojarApp, err := app.NewTekojarApp()
 	if err != nil {
 		panic(err)
 	}

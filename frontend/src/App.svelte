@@ -6,8 +6,7 @@
   import SettingsIcon from "@lucide/svelte/icons/settings";
 
   import type { Page } from "./type";
-  import AppSidebar from "./AppSidebar.svelte";
-  import NotFoundPage from "./component/NotFoundPage.svelte";
+  import AppSidebar from "./component/AppSidebar.svelte";
   import Tekojar from "./tekojar";
   import JsonataQuery from "./jsonata_query/JsonataQuery.svelte";
   import Settings from "./settings";
