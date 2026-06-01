@@ -1,7 +1,7 @@
-import { tekojar } from "wailsjs/go/models";
+import { app } from "wailsjs/go/models";
 
 
-export interface TekojarSetting extends tekojar.TekojarSetting { }
+export interface TekojarSetting extends app.DTOTekojarSetting { }
 
 
 
