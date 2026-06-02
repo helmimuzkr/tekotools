@@ -25,9 +25,11 @@ func InitLogger() error {
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
-
+	
+	output = f
+	
 	// write to both terminal and file
-	output = io.MultiWriter(os.Stdout, f)
+	// output = io.MultiWriter(os.Stdout, f)
 	return nil
 }
 
