@@ -80,6 +80,9 @@ func (s *Service) StartProcess(command string) error {
 
 	s.extractCommand(command)
 	s.cmd = exec.Command(s.cmdName, s.args...)
+	s.cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow: true,
+	}
 
 	PrintLog(s.Name, 0, fmt.Sprintf("executing command : %s %v", s.cmdName, s.args))
 
