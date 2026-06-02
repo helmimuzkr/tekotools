@@ -52,7 +52,7 @@ func NewWithSetting(Setting *Setting) (*Tekojar, error) {
 
 func initialSetup() error {
 	if err := InitLogger(); err != nil {
-		return err
+		panic(err)
 	}
 	listenAndServeDebugging()
 	return nil
