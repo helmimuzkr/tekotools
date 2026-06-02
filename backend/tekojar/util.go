@@ -28,8 +28,6 @@ func InitLogger() error {
 	
 	output = f
 	
-	// write to both terminal and file
-	// output = io.MultiWriter(os.Stdout, f)
 	return nil
 }
 
@@ -40,15 +38,15 @@ func PrintStringErr(name string, pid int, err string) string {
 func PrintErr(name string, pid int, errs ...string) {
 	msg := strings.Join(errs, " | ")
 	log := fmt.Sprintf("%s - error - [%s | %d] :  %s\n", time.Now().Format(FormatTime), name, pid, msg)
-	// call writes to both os.Stdout (terminal) and f (log file) in one shot.
-	fmt.Fprintf(output, log)
+	fmt.Fprintf(output, "%s", log)
+	fmt.Printf("%s", log)
 }
 
 func PrintLog(name string, pid int, messages ...string) {
 	msg := strings.Join(messages, " | ")
 	log := fmt.Sprintf("%s - info - [%s | %d] :  %s\n", time.Now().Format(FormatTime), name, pid, msg)
-	// call writes to both os.Stdout (terminal) and f (log file) in one shot.
-	fmt.Fprintf(output, log)
+	fmt.Fprintf(output, "%s", log)
+	fmt.Printf("%s", log)
 }
 
 func ConcatWithExecutablePath(path string) (string, error) {
