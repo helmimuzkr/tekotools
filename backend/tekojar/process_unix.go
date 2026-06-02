@@ -4,6 +4,6 @@ package tekojar
 
 import "syscall"
 
-func hideWindowAttr() *syscall.SysProcAttr {
+func getSysProcAttr() *syscall.SysProcAttr {
 	return &syscall.SysProcAttr{}
 }
