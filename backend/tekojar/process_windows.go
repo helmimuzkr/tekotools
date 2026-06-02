@@ -9,3 +9,7 @@ func getSysProcAttr() *syscall.SysProcAttr {
 		HideWindow: true,
 	}
 }
+
+func sendStopSignal(s *Service) {
+	s.cmd.Process.Kill()
+}
