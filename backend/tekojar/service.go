@@ -137,7 +137,7 @@ func (s *Service) StopProcess() {
 	if s.cmd != nil && s.cmd.Process != nil {
 		// send signal first, then wait
 		PrintLog(s.Name, s.Pid, "send sigterm signal to process")
-		s.cmd.Process.Signal(syscall.SIGTERM)
+		sendStopSignal(s)
 	}
 
 	select {
