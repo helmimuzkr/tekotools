@@ -7,7 +7,7 @@
   <div class="flex-1 overflow-x-auto">
     <nav class="flex flex-col gap-1 min-w-max w-52 h-full border-r p-2">
       <p class="text-xs text-muted-foreground px-2 py-1">Tekojar</p>
-      {#each $services as service, i (i)}
+      {#each $services as service (service.id)}
         <Button
           class="w-full justify-start {$selectedServiceId === service.id ? 'bg-accent' : ''}"
           size={"sm"}

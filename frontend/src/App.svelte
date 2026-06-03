@@ -48,12 +48,10 @@
 <div class="flex h-screen">
   <Sidebar.Provider open={false}>
     <AppSidebar {pages} {currentPage} onPageChange={handlePage} />
-    <Sidebar.Inset>
-      <div class="flex-1">
-        {#if currentPage.component}
-          <currentPage.component />
-        {/if}
-      </div>
+    <Sidebar.Inset class="flex flex-col h-full min-h-0 min-w-0 ">
+      {#if currentPage.component}
+        <currentPage.component />
+      {/if}
     </Sidebar.Inset>
   </Sidebar.Provider>
 </div>

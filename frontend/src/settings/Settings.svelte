@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Button from '$lib/components/ui/button/button.svelte';
-  import TekojarSettings from './TekojarSettings.svelte';
-  import { selectedSettingName } from './store';
-  import { onMount, type Component } from 'svelte';
+  import Button from "$lib/components/ui/button/button.svelte";
+  import TekojarSettings from "./TekojarSettings.svelte";
+  import { selectedSettingName } from "./store";
+  import { onMount, type Component } from "svelte";
 
   interface SettingPage {
     name: string;
@@ -12,8 +12,8 @@
 
   const settings: SettingPage[] = [
     {
-      name: 'tekojar_setting',
-      label: 'Tekojar',
+      name: "tekojar_setting",
+      label: "Tekojar",
       settingComponent: TekojarSettings,
     },
   ];
@@ -29,7 +29,7 @@
     {#each settings as setting (setting.name)}
       <Button
         class="w-full justify-start {$selectedSettingName === setting.name ? 'bg-accent' : ''}"
-        size={'sm'}
+        size={"sm"}
         variant="ghost"
         onclick={() => selectedSettingName.set(setting.name)}
       >
