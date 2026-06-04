@@ -7,4 +7,5 @@ export type Page = {
   icon: Component;
   section: "header" | "content" | "footer";
   component: Component | null;
+  onInit: () => void | null;
 };

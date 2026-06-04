@@ -67,11 +67,6 @@
               <Field.Label class="text-sm w-24 font-normal">Command</Field.Label>
               <Input placeholder="java -jar $PATH" bind:value={tekojarSetting.command} />
             </Field.Field>
-
-            <Field.Field orientation="horizontal">
-              <Checkbox bind:checked={tekojarSetting.auto_shutdown} />
-              <Field.Label class="text-sm w-24 font-normal">Auto Shutdown</Field.Label>
-            </Field.Field>
           </Field.Group>
         </Field.Set>
 

@@ -15,10 +15,15 @@
     <Button
       variant="default"
       size="sm"
-      disabled={$selectedService.status === "ACTIVE" ? true : false}
+      disabled={$selectedService.status === "ACTIVE"}
       onclick={() => startService($selectedService.id)}>Start</Button
     >
-    <Button variant="destructive" size="sm" onclick={() => stopService($selectedService.id)}>Stop</Button>
+    <Button
+      variant="destructive"
+      size="sm"
+      disabled={$selectedService.status !== "ACTIVE"}
+      onclick={() => stopService($selectedService.id)}>Stop</Button
+    >
     <Button variant="outline" size="sm" onclick={() => restartService($selectedService.id)}>Restart</Button>
   </div>
 </div>

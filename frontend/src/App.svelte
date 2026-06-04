@@ -7,9 +7,10 @@
 
   import type { Page } from "./type";
   import AppSidebar from "./component/AppSidebar.svelte";
-  import Tekojar from "./tekojar";
+  import { Tekojar, initTekojar } from "./tekojar";
   import JsonataQuery from "./jsonata_query/JsonataQuery.svelte";
   import Settings from "./settings";
+  import { onMount } from "svelte";
 
   const pages: Page[] = [
     {
@@ -18,6 +19,7 @@
       icon: Monitor,
       section: "content",
       component: Tekojar,
+      onInit: initTekojar,
     },
     {
       id: "jsonata",
@@ -25,6 +27,7 @@
       icon: Braces,
       section: "content",
       component: JsonataQuery,
+      onInit: null,
     },
     {
       id: "settings",
@@ -32,8 +35,15 @@
       icon: SettingsIcon,
       section: "footer",
       component: Settings,
+      onInit: null,
     },
   ];
+
+  onMount(() => {
+    pages.forEach((p) => {
+      p.onInit?.();
+    });
+  });
 
   let currentPage = $state<Page>(pages[0]);
 

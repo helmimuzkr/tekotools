@@ -1,1 +1,2 @@
-export { default } from "./Tekojar.svelte";
+export { default as Tekojar } from "./Tekojar.svelte";
+export { initTekojar } from "./init"
