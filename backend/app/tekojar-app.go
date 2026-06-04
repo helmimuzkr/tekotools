@@ -67,7 +67,6 @@ func (ta *TekojarApp) GetAll() []DTOService {
 			Status: string(s.Status),
 			Idx:    s.Idx,
 			Delay:  s.Delay,
-			Logs:   []DTOLog{},
 		})
 	}
 
@@ -85,7 +84,6 @@ func (ta *TekojarApp) Get(id string) (DTOService, error) {
 		Status: string(s.Status),
 		Idx:    s.Idx,
 		Delay:  s.Delay,
-		Logs:   []DTOLog{},
 	}, nil
 }
 
@@ -97,7 +95,8 @@ func (ta *TekojarApp) Start(id string) error {
 
 	go func() {
 		for log := range ch {
-			runtime.EventsEmit(ta.ctx, "service:log", map[string]interface{}{
+			eventName := "service:log"
+			runtime.EventsEmit(ta.ctx, eventName, map[string]interface{}{
 				"id": id,
 				"logView": DTOLog{
 					IsError: ta.containsIgnoreCase(log, "error"),
@@ -119,6 +118,12 @@ func (ta *TekojarApp) Stop(id string) error {
 		return err
 	}
 	return nil
+}
+
+// InitDTO exists to force Wails to generate TypeScript types for all DTO
+// it is not meant to be called by the frontend
+func (ta *TekojarApp) InitDTO() DTORegistry {
+	return DTORegistry{}
 }
 
 func (ta *TekojarApp) containsIgnoreCase(str string, char string) bool {

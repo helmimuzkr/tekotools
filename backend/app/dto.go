@@ -1,12 +1,24 @@
 package app
 
+type DTORegistry struct {
+	Service        DTOService
+	ServiceLog     DTOServiceLog
+	Log            DTOLog
+	ServiceSetting DTOServiceSetting
+	TekojarSetting DTOTekojarSetting
+}
+
 type DTOService struct {
-	ID     string   `json:"id"`
-	Name   string   `json:"name"`
-	Status string   `json:"status"`
-	Idx    int      `json:"idx"`
-	Delay  int      `json:"delay"`
-	Logs   []DTOLog `json:"logs"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Idx    int    `json:"idx"`
+	Delay  int    `json:"delay"`
+}
+
+type DTOServiceLog struct {
+	ServiceID string   `json:"service_id"`
+	Logs      []DTOLog `json:"logs"`
 }
 
 type DTOLog struct {
