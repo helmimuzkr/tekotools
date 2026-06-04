@@ -6,7 +6,7 @@
 <div class="flex flex-col h-full">
   <div class="flex-1 overflow-x-auto">
     <nav class="flex flex-col gap-1 min-w-max w-52 h-full border-r p-2">
-      <div class="text-xs text-muted-foreground px-2 py-1 my-1">Tekojar</div>
+      <div class="text-s text-muted-foreground px-2 py-1">Tekojar</div>
       {#each $services as service (service.id)}
         <Button
           class="w-full justify-start {$selectedServiceId === service.id ? 'bg-accent' : ''}"

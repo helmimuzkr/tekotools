@@ -25,7 +25,7 @@
 
 <div class="flex h-full">
   <nav class="flex flex-col w-52 h-full border-r p-2 gap-1">
-    <p class="text-xs text-muted-foreground px-2 py-1">Settings</p>
+    <p class="text-s text-muted-foreground px-2 py-1">Settings</p>
     {#each settings as setting (setting.name)}
       <Button
         class="w-full justify-start {$selectedSettingName === setting.name ? 'bg-accent' : ''}"
