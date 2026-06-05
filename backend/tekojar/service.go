@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -148,7 +149,7 @@ func (s *Service) StopProcess() {
 	if s.cmd != nil && s.cmd.Process != nil {
 		// send signal first, then wait
 		PrintLog(s.Name, s.Pid, "send sigterm signal to process")
-		sendStopSignal(s)
+		s.cmd.Process.Signal(syscall.SIGTERM)
 	}
 
 	time.Sleep(11 * time.Second)
