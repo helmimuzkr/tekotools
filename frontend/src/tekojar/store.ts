@@ -8,6 +8,7 @@ export const services = writable<Service[]>([]);
 export const selectedServiceId = writable<string | null>(null);
 export const serviceLogs = writable<Record<string, Log[]>>({});
 export const error = writable<string | null>(null);
+export const stoppingProcess = writable<boolean>(false);
 
 // --- Derived ---
 export const selectedService = derived(
@@ -22,6 +23,22 @@ export const selectedServiceLogs = derived(
     $selectedServiceId ? ($serviceLogs[$selectedServiceId] ?? []) : []
 );
 
+export const selectedServiceStatus = derived(
+  [selectedService, stoppingProcess],
+  ([$selectedService, $stoppingProcess]) => {
+    if ($stoppingProcess) return "STOPPING";
+    return $selectedService?.status ?? "INACTIVE";
+  }
+);
+
+export const isDisableButton = derived(
+  [selectedService, stoppingProcess],
+  ([$selectedService, $stoppingProcess]) => ({
+    start: $selectedService?.status === "ACTIVE" || $stoppingProcess,
+    stop: $selectedService?.status !== "ACTIVE" || $stoppingProcess,
+    restart: $stoppingProcess,
+  })
+);
 
 export function initLogListener() {
   EventsOn("service:log", (data: { id: string; logView: Log }) => {
@@ -69,7 +86,9 @@ export async function startService(id: string) {
 
 export async function stopService(id: string) {
   try {
+    stoppingProcess.set(true)
     await Stop(id);
+    stoppingProcess.set(false)
     await refreshService(id);
     error.set(null);
   } catch (err) {

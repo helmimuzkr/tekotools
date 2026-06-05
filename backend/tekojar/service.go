@@ -151,6 +151,8 @@ func (s *Service) StopProcess() {
 		sendStopSignal(s)
 	}
 
+	time.Sleep(11 * time.Second)
+
 	select {
 	case <-s.processDoneCh:
 		PrintLog(s.Name, s.Pid, "stopped cleanly after send sigterm")
