@@ -25,9 +25,9 @@ func InitLogger() error {
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
-	
+
 	output = f
-	
+
 	return nil
 }
 
@@ -56,4 +56,8 @@ func ConcatWithExecutablePath(path string) (string, error) {
 	}
 	path = filepath.Join(filepath.Dir(exe), path)
 	return path, nil
+}
+
+func ContainsIgnoreCase(input string, char string) bool {
+	return strings.Contains(strings.ToLower(input), strings.ToLower(char))
 }

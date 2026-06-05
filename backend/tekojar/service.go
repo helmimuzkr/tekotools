@@ -10,13 +10,25 @@ import (
 	"time"
 )
 
-type Status string
+type (
+	Status  string
+	LogType string
+)
 
 const (
 	ACTIVE   Status = "ACTIVE"
 	INACTIVE Status = "INACTIVE"
 	STOPPED  Status = "STOPPED"
+
+	INFO  LogType = "INFO"
+	ERROR LogType = "ERROR"
+	TIMER LogType = "TIMER"
 )
+
+type Log struct {
+	LogType LogType
+	Message string
+}
 
 type Service struct {
 	ID     string
@@ -37,7 +49,7 @@ type Service struct {
 	processDoneCh chan struct{}
 
 	eventMu    sync.RWMutex
-	eventLogCh chan string
+	eventLogCh chan Log
 }
 
 func InitService(ss ServiceSetting) *Service {
@@ -150,10 +162,10 @@ func (s *Service) StopProcess() {
 	}
 }
 
-func (s *Service) Subscribe() chan string {
+func (s *Service) Subscribe() chan Log {
 	s.eventMu.Lock()
 	defer s.eventMu.Unlock()
-	s.eventLogCh = make(chan string, 100)
+	s.eventLogCh = make(chan Log)
 	return s.eventLogCh
 }
 
@@ -203,7 +215,7 @@ func (s *Service) streamLog(logPipe io.ReadCloser, wg *sync.WaitGroup) {
 	scanner := bufio.NewScanner(logPipe)
 	for scanner.Scan() {
 		line := scanner.Text()
-		s.publishEvent(line)
+		s.publishEvent("", line)
 	}
 }
 
@@ -230,14 +242,24 @@ func (s *Service) extractCommand(command string) {
 // copy the channel reference into a local variable, release the lock immediately.
 // it because dont want to hold the lock while sending.
 // that would cause a deadlock if Unsubscribe tries to acquire the write lock while blocked on a full channel.
-func (s *Service) publishEvent(line string) {
+func (s *Service) publishEvent(logType LogType, line string) {
 	s.eventMu.RLock()
 	ch := s.eventLogCh
 	s.eventMu.RUnlock()
 
+	log := Log{LogType: logType, Message: line}
+
+	if logType == "" {
+		if ContainsIgnoreCase(line, string(ERROR)) {
+			log.LogType = ERROR
+		} else {
+			log.LogType = INFO
+		}
+	}
+
 	if ch != nil {
 		select {
-		case ch <- line:
+		case ch <- log:
 		default: // drop if full
 		}
 	}
@@ -256,7 +278,7 @@ func (s *Service) delayTicker() bool {
 		}
 		msg := fmt.Sprintf("starting in %d seconds", remaining)
 		PrintLog(s.Name, s.Pid, msg)
-		s.publishEvent(msg)
+		s.publishEvent(TIMER, msg)
 		<-ticker.C
 	}
 	return true

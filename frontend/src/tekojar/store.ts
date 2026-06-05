@@ -25,10 +25,18 @@ export const selectedServiceLogs = derived(
 
 export function initLogListener() {
   EventsOn("service:log", (data: { id: string; logView: Log }) => {
-    serviceLogs.update(curr => ({
-      ...curr,
-      [data.id]: [...(curr[data.id] ?? []), data.logView]
-    }));
+    serviceLogs.update(curr => {
+      let existing = curr[data.id] ?? [];
+
+      // timer logs are replaced instead of appended. so only the latest countdown is shown
+      if (data.logView.log_type === 'TIMER') {
+        existing = existing.filter(l => l.log_type !== 'TIMER')
+      }
+
+      const updated = [...existing, data.logView]
+
+      return { ...curr, [data.id]: updated };
+    });
   });
 }
 

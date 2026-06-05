@@ -140,7 +140,7 @@ func (t *Tekojar) GetService(id string) (*Service, error) {
 	return t.services[id], nil
 }
 
-func (t *Tekojar) WatchService(id string) (chan string, error) {
+func (t *Tekojar) WatchService(id string) (chan Log, error) {
 	s, err := t.GetService(id)
 	if err != nil {
 		return nil, err

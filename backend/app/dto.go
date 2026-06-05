@@ -22,7 +22,7 @@ type DTOServiceLog struct {
 }
 
 type DTOLog struct {
-	IsError bool   `json:"is_error"`
+	LogType string `json:"log_type"`
 	Log     string `json:"log"`
 }
 

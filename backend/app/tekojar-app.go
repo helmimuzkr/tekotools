@@ -94,13 +94,13 @@ func (ta *TekojarApp) Start(id string) error {
 	}
 
 	go func() {
-		for log := range ch {
+		for l := range ch {
 			eventName := "service:log"
 			runtime.EventsEmit(ta.ctx, eventName, map[string]interface{}{
 				"id": id,
 				"logView": DTOLog{
-					IsError: ta.containsIgnoreCase(log, "error"),
-					Log:     log,
+					LogType: string(l.LogType),
+					Log:     l.Message,
 				},
 			})
 		}
