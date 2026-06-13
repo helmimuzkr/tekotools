@@ -8,6 +8,7 @@
     stopService,
     selectedServiceStatus,
     isDisableButton,
+    clearLog,
   } from "./store";
 </script>
 
@@ -19,6 +20,7 @@
     </Badge>
   </div>
   <div class="flex gap-2">
+    <Button variant="default" size="sm" onclick={() => clearLog($selectedService.id)}>Clear</Button>
     <Button
       variant="default"
       size="sm"
