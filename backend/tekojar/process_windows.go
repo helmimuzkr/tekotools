@@ -16,7 +16,7 @@ func getSysProcAttr() *syscall.SysProcAttr {
 
 func sendShutdownSignal(s *Service) error {
 	// taskkill /T sends a shutdown message to the process tree.
-	// Without /F it's not forced — gives Spring Boot a chance to run shutdown hooks.
-	cmd := exec.Command("taskkill", "/T", "/PID", strconv.Itoa(s.Pid))
+	// Without /F it's not forced — gives the app a chance to run shutdown hooks.
+	cmd := exec.Command("taskkill", "/T", "/F", "/PID", strconv.Itoa(s.Pid))
 	return cmd.Run()
 }
