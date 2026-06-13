@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -19,7 +18,7 @@ type (
 const (
 	ACTIVE   Status = "ACTIVE"
 	INACTIVE Status = "INACTIVE"
-	STOPPED  Status = "STOPPED"
+	STOPPING Status = "STOPPING"
 
 	INFO  LogType = "INFO"
 	ERROR LogType = "ERROR"
@@ -111,7 +110,7 @@ func (s *Service) StartProcess(command string) error {
 	defer stderr.Close()
 
 	if !s.delayTicker() {
-		s.processDone()
+		s.waitAndCleanUp(nil)
 		return nil
 	}
 
@@ -129,10 +128,7 @@ func (s *Service) StartProcess(command string) error {
 	go s.streamLog(stdout, &wg)
 
 	s.cmd.Wait()
-	wg.Wait()
-
-	// StartProcess owns all cleanup
-	s.processDone()
+	s.waitAndCleanUp(&wg)
 	PrintLog(s.Name, s.Pid, "service exited.")
 
 	return nil
@@ -144,17 +140,17 @@ func (s *Service) StopProcess() {
 		return
 	}
 
-	s.SetStatus(INACTIVE)
+	s.SetStatus(STOPPING)
 
 	if s.cmd != nil && s.cmd.Process != nil {
 		// send signal first, then wait
-		PrintLog(s.Name, s.Pid, "send interrupt signal to process")
-		s.cmd.Process.Signal(os.Interrupt)
+		PrintLog(s.Name, s.Pid, "send shutdown signal to process")
+		sendShutdownSignal(s)
 	}
 
 	select {
 	case <-s.processDoneCh:
-		PrintLog(s.Name, s.Pid, "stopped cleanly after send sigterm")
+		PrintLog(s.Name, s.Pid, "stopped cleanly")
 	case <-time.After(10 * time.Second):
 		PrintLog(s.Name, s.Pid, "didn't stop in time, force killing")
 		s.cmd.Process.Kill()
@@ -190,14 +186,16 @@ func (s *Service) GetStatus() Status {
 
 func (s *Service) abortError(err error) {
 	PrintErr(s.Name, s.Pid, err.Error())
-	s.processDone()
+	s.waitAndCleanUp(nil)
 }
 
-func (s *Service) processDone() {
+func (s *Service) waitAndCleanUp(wg *sync.WaitGroup) {
+	if wg != nil {
+		wg.Wait()
+	}
+
 	PrintLog(s.Name, s.Pid, "cleaning up ...")
 	defer PrintLog(s.Name, s.Pid, "done cleaning up")
-
-	s.SetStatus(INACTIVE)
 
 	s.eventMu.Lock()
 	if s.eventLogCh != nil {
@@ -209,6 +207,8 @@ func (s *Service) processDone() {
 	if s.processDoneCh != nil {
 		close(s.processDoneCh)
 	}
+
+	s.SetStatus(INACTIVE)
 }
 
 func (s *Service) streamLog(logPipe io.ReadCloser, wg *sync.WaitGroup) {
@@ -232,12 +232,12 @@ func (s *Service) extractCommand(command string) {
 	// split and remove first args, because the first args is command
 	args := strings.Split(cmdName, " ")
 	if len(args) > 1 {
-		cmdName = args[0]
-		args = args[1:]
+		s.cmdName = args[0]
+		s.args = args[1:]
+	} else {
+		s.cmdName = cmdName
+		s.args = []string{}
 	}
-
-	s.cmdName = cmdName
-	s.args = args
 }
 
 // copy the channel reference into a local variable, release the lock immediately.
@@ -274,7 +274,7 @@ func (s *Service) delayTicker() bool {
 	}()
 
 	for remaining := s.Delay; remaining > 0; remaining-- {
-		if s.GetStatus() == INACTIVE {
+		if s.GetStatus() != ACTIVE {
 			return false
 		}
 		msg := fmt.Sprintf("starting in %d seconds", remaining)
