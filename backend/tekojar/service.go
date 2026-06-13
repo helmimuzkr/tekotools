@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -148,11 +148,9 @@ func (s *Service) StopProcess() {
 
 	if s.cmd != nil && s.cmd.Process != nil {
 		// send signal first, then wait
-		PrintLog(s.Name, s.Pid, "send sigterm signal to process")
-		s.cmd.Process.Signal(syscall.SIGTERM)
+		PrintLog(s.Name, s.Pid, "send interrupt signal to process")
+		s.cmd.Process.Signal(os.Interrupt)
 	}
-
-	time.Sleep(11 * time.Second)
 
 	select {
 	case <-s.processDoneCh:
