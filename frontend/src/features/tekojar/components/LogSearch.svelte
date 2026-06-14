@@ -23,7 +23,7 @@
   />
 
   <span class="text-sm text-muted-foreground whitespace-nowrap">
-    {logState.matchingLineIndices.length} matches
+    {logState.currentMatchNumber} / {logState.matchingLineIndices.length}
   </span>
 
   <Button variant="ghost" size="icon" onclick={() => logState.prevMatch()}>↑</Button>

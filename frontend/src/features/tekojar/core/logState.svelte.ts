@@ -3,7 +3,7 @@ import type { Log } from "@/features/tekojar/types"
 import { EventsOn } from "@/../wailsjs/runtime/runtime"
 import { serviceState } from "./serviceState.svelte"
 
-const MAX_LINES = 1000
+const MAX_LINES = 10
 const TRIM_RATIO = 0.2
 
 class LogState {
@@ -24,6 +24,8 @@ class LogState {
         .map((l, i) => l.log.toLowerCase().includes(logState.searchQuery.toLowerCase()) ? i : -1)
         .filter((i) => i !== -1)
   )
+
+  currentMatchNumber = $derived(logState.matchingLineIndices.length > 0 ? logState.currentMatchIndex + 1 : 0);
 
   #logBufferByService: Record<string, number> = {}
 
@@ -58,12 +60,12 @@ class LogState {
 
   nextMatch() {
     if (this.matchingLineIndices.length === 0) return
-    this.currentMatchIndex = (this.currentMatchIndex + 1 + this.matchingLineIndices.length) % this.matchingLineIndices.length
+    this.currentMatchIndex = (this.currentMatchIndex + 1) % this.matchingLineIndices.length
   }
 
   prevMatch() {
     if (this.matchingLineIndices.length === 0) return
-    this.currentMatchIndex = (this.currentMatchIndex - 1 + this.matchingLineIndices.length) % this.matchingLineIndices.length
+    this.currentMatchIndex = (this.currentMatchIndex - 1) % this.matchingLineIndices.length
   }
 
   #replaceTimerLog(id: string, entry: Log) {

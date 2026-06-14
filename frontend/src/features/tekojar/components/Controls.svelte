@@ -12,7 +12,6 @@
   }
 
   async function handleStop() {
-    logState.clearLog(serviceState.selectedServiceId);
     const err = await serviceState.stop(serviceState.selectedServiceId);
     if (err) toast.error(err);
   }

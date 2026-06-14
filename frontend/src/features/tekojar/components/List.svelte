@@ -11,7 +11,6 @@
   }
 
   async function handleStopAll() {
-    logState.clearLogAllService();
     const errs = await serviceState.stopAll();
     if (errs) errs.forEach((e) => toast.error(e));
   }
