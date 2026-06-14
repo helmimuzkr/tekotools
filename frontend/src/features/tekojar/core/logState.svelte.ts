@@ -87,7 +87,6 @@ class LogState {
       const dropCount = Math.floor(logs.length * TRIM_RATIO)
       logs.splice(0, dropCount)
       this.#logBufferByService[id] -= dropCount
-      console.log(`total ${this.#logBufferByService[id]}`)
     }
   }
 }
