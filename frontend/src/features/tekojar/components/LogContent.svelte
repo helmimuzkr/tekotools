@@ -12,18 +12,23 @@
   });
 
   function highlightLine(log: string, lineIndex: number): string {
-    if (logState.searchQuery === "") return escapeHtml(log);
+    let escapedLog = `<p class=${serviceLogClass}>${escapeHtml(log)}</p>`;
+
+    if (logState.searchQuery === "") return escapedLog;
+    const escapedQuery = escapeHtml(logState.searchQuery);
 
     const matchPosition = logState.matchingLineIndices.indexOf(lineIndex);
-    if (matchPosition === -1) return escapeHtml(log);
+    if (matchPosition === -1) return escapedLog;
 
     const isCurrent = matchPosition === logState.currentMatchIndex;
     const hightlightClass = isCurrent ? "bg-orange-400 text-black" : "bg-yellow-300 text-black";
 
-    return `<p class=${serviceLogClass}>${escapeHtml(log)}</p>`.replace(
-      new RegExp(escapeHtml(logState.searchQuery), "gi"),
+    escapedLog = escapedLog.replace(
+      new RegExp(escapedQuery, "gi"),
       (wordMatch) => `<mark class="${hightlightClass}">${wordMatch}</mark>`,
     );
+
+    return escapedLog;
   }
 
   function isMatch(lineIndex: number): boolean {
