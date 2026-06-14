@@ -3,6 +3,7 @@
   import { escapeHtml } from "@/shared/utils";
 
   let lineRefs: HTMLDivElement[] = $state([]);
+  const serviceLogClass = "whitespace-pre";
 
   $effect(() => {
     const currentLineIndex = logState.matchingLineIndices[logState.currentMatchIndex];
@@ -19,7 +20,7 @@
     const isCurrent = matchPosition === logState.currentMatchIndex;
     const hightlightClass = isCurrent ? "bg-orange-400 text-black" : "bg-yellow-300 text-black";
 
-    return escapeHtml(log).replace(
+    return `<p class=${serviceLogClass}>${escapeHtml(log)}</p>`.replace(
       new RegExp(escapeHtml(logState.searchQuery), "gi"),
       (wordMatch) => `<mark class="${hightlightClass}">${wordMatch}</mark>`,
     );
@@ -36,7 +37,7 @@
       {#if isMatch(i)}
         {@html highlightLine(serviceLog.log, i)}
       {:else}
-        <p class="whitespace-pre">{serviceLog.log}</p>
+        <p class={serviceLogClass}>{serviceLog.log}</p>
       {/if}
     </div>
   {/each}
