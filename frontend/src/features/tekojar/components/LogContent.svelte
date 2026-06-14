@@ -12,23 +12,27 @@
   });
 
   function highlightLine(log: string, lineIndex: number): string {
-    let escapedLogHtml = `<p class=${serviceLogClass}>${escapeHtml(log)}</p>`;
+    let escapedLog = escapeHtml(log);
 
-    if (logState.searchQuery === "") return escapedLogHtml;
+    if (logState.searchQuery === "") return createLogHtml(escapedLog);
     const escapedQuery = escapeRegex(escapeHtml(logState.searchQuery));
 
     const matchPosition = logState.matchingLineIndices.indexOf(lineIndex);
-    if (matchPosition === -1) return escapedLogHtml;
+    if (matchPosition === -1) return createLogHtml(escapedLog);
 
     const isCurrent = matchPosition === logState.currentMatchIndex;
     const hightlightClass = isCurrent ? "bg-orange-400 text-black" : "bg-yellow-300 text-black";
 
-    escapedLogHtml = escapedLogHtml.replace(
+    escapedLog = escapedLog.replace(
       new RegExp(escapedQuery, "gi"),
       (wordMatch) => `<mark class="${hightlightClass}">${wordMatch}</mark>`,
     );
 
-    return escapedLogHtml;
+    return createLogHtml(escapedLog);
+  }
+
+  function createLogHtml(log: string): string {
+    return `<p class=${serviceLogClass}>${log}</p>`;
   }
 </script>
 
