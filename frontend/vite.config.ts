@@ -9,6 +9,8 @@ export default defineConfig({
   resolve: {
     alias: {
       $lib: path.resolve("./src/lib"),
+      $wails: new URL("./wailsjs", import.meta.url).pathname,
+      "@": new URL("./src", import.meta.url).pathname,
     },
   },
 });

@@ -1,8 +1,8 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button/button.svelte";
-  import TekojarSettings from "./TekojarSettings.svelte";
-  import { selectedSettingName } from "./store";
   import { onMount, type Component } from "svelte";
+  import Tekojar from "./components/Tekojar.svelte";
+  import { settingState } from "./core/settingState.svelte";
 
   interface SettingPage {
     name: string;
@@ -14,12 +14,12 @@
     {
       name: "tekojar_setting",
       label: "Tekojar",
-      settingComponent: TekojarSettings,
+      settingComponent: Tekojar,
     },
   ];
 
   onMount(() => {
-    selectedSettingName.set(settings[0].name);
+    settingState.selectedSettingName = settings[0].name;
   });
 </script>
 
@@ -28,10 +28,10 @@
     <p class="text-s text-muted-foreground px-2 py-1">Settings</p>
     {#each settings as setting (setting.name)}
       <Button
-        class="w-full justify-start {$selectedSettingName === setting.name ? 'bg-accent' : ''}"
+        class="w-full justify-start {settingState.selectedSettingName === setting.name ? 'bg-accent' : ''}"
         size={"sm"}
         variant="ghost"
-        onclick={() => selectedSettingName.set(setting.name)}
+        onclick={() => (settingState.selectedSettingName = setting.name)}
       >
         {setting.label}
       </Button>

@@ -1,16 +1,16 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { ModeWatcher } from "mode-watcher";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import Braces from "@lucide/svelte/icons/braces";
   import Monitor from "@lucide/svelte/icons/monitor";
   import SettingsIcon from "@lucide/svelte/icons/settings";
-
   import type { Page } from "./type";
-  import AppSidebar from "./component/AppSidebar.svelte";
-  import { Tekojar, initTekojar } from "./tekojar";
-  import JsonataQuery from "./jsonata_query/JsonataQuery.svelte";
-  import Settings from "./settings";
-  import { onMount } from "svelte";
+  import AppSidebar from "@/shared/components/AppSidebar.svelte";
+  import { Tekojar, initTekojar } from "./features/tekojar";
+  import Setting from "./features/settings";
+  import JsonataQuery from "./features/jsonata_query/JsonataQuery.svelte";
+  import { Toaster } from "$lib/components/ui/sonner";
 
   const pages: Page[] = [
     {
@@ -34,7 +34,7 @@
       title: "Settings",
       icon: SettingsIcon,
       section: "footer",
-      component: Settings,
+      component: Setting,
       onInit: null,
     },
   ];
@@ -54,6 +54,9 @@
 
 <!-- Dark Mode Whatcher -->
 <ModeWatcher />
+
+<!-- Toast -->
+<Toaster position="top-center" richColors={true} />
 
 <div class="flex h-screen">
   <Sidebar.Provider open={false}>

@@ -9,3 +9,6 @@ export type Page = {
   component: Component | null;
   onInit: () => void | null;
 };
+
+export type ErrorPromise = Promise<string | null>
+export type ErrorPromiseArr = Promise<string[] | null>
