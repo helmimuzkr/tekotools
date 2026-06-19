@@ -3,7 +3,7 @@ import type { Log } from "@/features/tekojar/types"
 import { EventsOn } from "@/../wailsjs/runtime/runtime"
 import { serviceState } from "./serviceState.svelte"
 
-const MAX_LINES = 10
+const MAX_LINES = 1000
 const TRIM_RATIO = 0.2
 
 class LogState {
