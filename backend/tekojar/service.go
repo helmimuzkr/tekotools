@@ -86,6 +86,11 @@ func (s *Service) StartProcess(command string) error {
 		return nil
 	}
 
+	if s.IsSkip {
+		PrintLog(s.Name, s.Pid, "service skipped.")
+		return nil
+	}
+
 	s.processDoneCh = make(chan struct{})
 	s.SetStatus(ACTIVE)
 
