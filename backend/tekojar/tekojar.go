@@ -207,9 +207,6 @@ func (t *Tekojar) StartAll() {
 	t.mu.RUnlock()
 
 	for _, s := range services {
-		if s.IsSkip {
-			continue
-		}
 		t.Start(s.ID)
 	}
 }
