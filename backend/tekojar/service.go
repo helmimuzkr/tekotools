@@ -132,7 +132,11 @@ func (s *Service) StartProcess(command string) error {
 	go s.streamLog(stderr, &wg)
 	go s.streamLog(stdout, &wg)
 
-	s.cmd.Wait()
+	if err := s.cmd.Wait(); err != nil {
+		s.abortError(err)
+		return err
+	}
+
 	s.waitAndCleanUp(&wg)
 	PrintLog(s.Name, s.Pid, "service exited.")
 
